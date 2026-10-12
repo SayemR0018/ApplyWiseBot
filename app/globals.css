@@ -3,11 +3,36 @@
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-fraunces);
+}
+
+@theme {
+  --color-paper: #f5f1e8;
+  --color-card: #fffdf8;
+  --color-line: #e3dccd;
+  --color-ink: #1d1a15;
+  --color-muted: #6f675a;
+  --color-accent: #1f5e4b;
+  --color-accent-ink: #143f32;
+  --color-accent-soft: #e2eee7;
+  --color-clay: #b4532a;
+  --color-clay-soft: #f6e6dc;
 }
 
 body {
-  background: #f8fafc;
-  color: #0f172a;
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
+
+/* Faint paper grain so the background isn't a flat fill. */
+.grain {
+  background-image: radial-gradient(rgb(29 26 21 / 0.035) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+::selection {
+  background: var(--color-accent-soft);
+  color: var(--color-accent-ink);
 }
 
 @media print {

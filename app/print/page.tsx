@@ -5,7 +5,7 @@ import { loadState, type AppState, type Pkg } from "@/lib/client/store";
 
 function H({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="mb-1 mt-4 border-b border-slate-400 pb-0.5 text-sm font-bold uppercase tracking-wide">{children}</h2>
+    <h2 className="mb-1 mt-4 border-b border-stone-400 pb-0.5 text-sm font-bold uppercase tracking-wide">{children}</h2>
   );
 }
 
@@ -29,7 +29,7 @@ export default function PrintPage() {
   if (!data) return null;
   if (!data.pkg)
     return (
-      <p className="p-8 text-sm text-slate-600">
+      <p className="p-8 text-sm text-stone-600">
         Package not found in this browser. Open it from the Package screen first.
       </p>
     );
@@ -40,15 +40,15 @@ export default function PrintPage() {
 
   return (
     <div className="mx-auto max-w-[800px] bg-white p-8 text-[13px] leading-snug text-black print:p-0">
-      <div className="mb-4 flex items-center justify-between rounded bg-slate-100 p-3 text-sm print:hidden">
+      <div className="mb-4 flex items-center justify-between rounded-xl border border-line bg-paper p-3 text-sm print:hidden">
         <span>Use &quot;Save as PDF&quot; in the print dialog.</span>
-        <button className="rounded bg-indigo-600 px-3 py-1.5 text-white" onClick={() => window.print()}>
+        <button className="rounded-full bg-accent px-4 py-1.5 text-white" onClick={() => window.print()}>
           Print / Save as PDF
         </button>
       </div>
 
       <header className="text-center">
-        <h1 className="text-2xl font-bold">{profile?.name}</h1>
+        <h1 className="font-display text-3xl font-semibold tracking-tight">{profile?.name}</h1>
         <p className="text-xs">{contact}</p>
       </header>
       {cv.summary && (

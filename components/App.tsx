@@ -26,11 +26,14 @@ function Toasts({ toasts, dismiss }: { toasts: Toast[]; dismiss: (id: number) =>
         <button
           key={t.id}
           onClick={() => dismiss(t.id)}
-          className={`rounded-lg px-4 py-3 text-left text-sm shadow-lg ${
-            t.kind === "error" ? "bg-red-600 text-white" : "bg-emerald-600 text-white"
+          className={`flex items-start gap-3 rounded-xl border px-4 py-3 text-left text-sm shadow-[0_8px_30px_rgb(29_26_21/0.12)] ${
+            t.kind === "error" ? "border-clay/30 bg-clay-soft text-clay" : "border-accent/20 bg-accent-soft text-accent-ink"
           }`}
         >
-          {t.text}
+          <span
+            className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${t.kind === "error" ? "bg-clay" : "bg-accent"}`}
+          />
+          <span>{t.text}</span>
         </button>
       ))}
     </div>
@@ -40,13 +43,14 @@ function Toasts({ toasts, dismiss }: { toasts: Toast[]; dismiss: (id: number) =>
 /* --------------------------------- helpers --------------------------------- */
 
 const btn =
-  "inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50";
-const btnPrimary = `${btn} bg-indigo-600 text-white hover:bg-indigo-700`;
-const btnGhost = `${btn} border border-slate-300 bg-white text-slate-700 hover:bg-slate-50`;
-const btnDanger = `${btn} border border-red-300 bg-white text-red-700 hover:bg-red-50`;
+  "inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45 disabled:active:scale-100";
+const btnPrimary = `${btn} bg-accent text-white shadow-sm hover:bg-accent-ink`;
+const btnGhost = `${btn} border border-line bg-card text-ink hover:border-ink/30 hover:bg-white`;
+const btnDanger = `${btn} border border-clay/30 bg-card text-clay hover:bg-clay-soft`;
 const input =
-  "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 read-only:bg-slate-50";
-const card = "rounded-xl border border-slate-200 bg-white p-5 shadow-sm";
+  "w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink transition placeholder:text-muted/60 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/15 read-only:border-transparent read-only:bg-paper/60";
+const card = "rounded-2xl border border-line bg-card p-5 sm:p-6 shadow-[0_1px_0_rgb(29_26_21/0.04)]";
+const eyebrow = "text-[11px] font-semibold uppercase tracking-[0.14em]";
 
 const splitList = (v: string) =>
   v
@@ -67,7 +71,7 @@ function Spinner() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">{label}</span>
+      <span className={`mb-1.5 block text-muted ${eyebrow}`}>{label}</span>
       {children}
     </label>
   );
@@ -111,19 +115,46 @@ function ListInput({
   );
 }
 
-function ScoreBadge({ match }: { match: MatchResult }) {
-  const color = !match.eligible
-    ? "bg-slate-200 text-slate-700"
-    : match.total >= 70
-      ? "bg-emerald-100 text-emerald-800"
-      : match.total >= 50
-        ? "bg-amber-100 text-amber-800"
-        : "bg-rose-100 text-rose-800";
+function ScoreBadge({ match, size = 60 }: { match: MatchResult; size?: number }) {
+  const tone = !match.eligible ? "#a8a090" : match.total >= 70 ? "#1f5e4b" : match.total >= 50 ? "#b7832f" : "#b4532a";
+  const r = 15.5;
+  const c = 2 * Math.PI * r;
   return (
-    <div className={`flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-full ${color}`}>
-      <span className="text-lg font-bold leading-none">{match.total}</span>
-      <span className="text-[10px]">/100</span>
+    <div className="relative shrink-0" style={{ width: size, height: size }} title={`${match.total} / 100`}>
+      <svg viewBox="0 0 36 36" className="h-full w-full -rotate-90">
+        <circle cx="18" cy="18" r={r} fill="none" stroke="#e9e3d6" strokeWidth="3" />
+        <circle
+          cx="18"
+          cy="18"
+          r={r}
+          fill="none"
+          stroke={tone}
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeDasharray={`${(Math.max(0, Math.min(100, match.total)) / 100) * c} ${c}`}
+        />
+      </svg>
+      <span className="absolute inset-0 flex flex-col items-center justify-center leading-none">
+        <span className="font-display text-lg font-semibold" style={{ color: tone }}>
+          {match.total}
+        </span>
+        <span className="mt-0.5 text-[9px] text-muted">/100</span>
+      </span>
     </div>
+  );
+}
+
+function Pill({ tone, children }: { tone: "accent" | "clay" | "ink" | "muted"; children: React.ReactNode }) {
+  const cls = {
+    accent: "bg-accent-soft text-accent-ink",
+    clay: "bg-clay-soft text-clay",
+    ink: "bg-ink text-paper",
+    muted: "bg-stone-200/70 text-stone-700",
+  }[tone];
+  return (
+    <span className={`inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium ${cls}`}>
+      {children}
+    </span>
   );
 }
 
@@ -158,38 +189,37 @@ export default function App() {
 
   return (
     <ToastCtx.Provider value={toast}>
-      <div className="min-h-screen bg-slate-50 text-slate-900">
-        <header className="border-b border-slate-200 bg-white print:hidden">
+      <div className="grain flex min-h-screen flex-col bg-paper text-ink">
+        <header className="border-b border-line/80 bg-paper/85 backdrop-blur print:hidden">
           <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-4">
-            <div>
-              <h1 className="text-lg font-semibold">ApplyWise · AI Job Search & Application Agent</h1>
-              <p className="text-xs text-slate-500">
-                Prepares tailored applications for your approval. It never submits anything for you.
-              </p>
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-ink font-display text-xl font-semibold text-paper">
+                A
+              </span>
+              <div>
+                <h1 className="font-display text-xl font-semibold leading-tight tracking-tight">ApplyWise</h1>
+                <p className="text-xs text-muted">Your job search agent. You approve every application.</p>
+              </div>
             </div>
-            <nav className="flex gap-1 rounded-lg bg-slate-100 p-1 text-sm">
+            <nav className="flex gap-1 rounded-full border border-line bg-card p-1 text-sm">
               {(["apply", "tracker"] as const).map((t) => (
                 <button
                   key={t}
                   onClick={() => setTab(t)}
-                  className={`rounded-md px-3 py-1.5 font-medium ${tab === t ? "bg-white shadow-sm" : "text-slate-600"}`}
+                  className={`rounded-full px-4 py-1.5 font-medium transition ${
+                    tab === t ? "bg-ink text-paper" : "text-muted hover:text-ink"
+                  }`}
                 >
-                  {t === "apply" ? "Apply" : `Tracker (${Object.keys(state.packages).length})`}
+                  {t === "apply" ? "Apply" : `Tracker · ${Object.keys(state.packages).length}`}
                 </button>
               ))}
             </nav>
           </div>
-          <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-2 px-4 pb-3 text-xs text-slate-500">
-            <span>Your CV is processed by OpenAI via this app&apos;s server and is not stored on the server.</span>
-            <button onClick={deleteAll} className="text-red-600 underline-offset-2 hover:underline">
-              Delete all my data
-            </button>
-          </div>
         </header>
 
-        <main className="mx-auto max-w-5xl px-4 py-6">
+        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
           {!hydrated ? (
-            <div className="flex justify-center py-20 text-slate-400">
+            <div className="flex justify-center py-20 text-muted">
               <Spinner />
             </div>
           ) : tab === "tracker" ? (
@@ -203,29 +233,42 @@ export default function App() {
             />
           ) : (
             <>
-              <ol className="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {steps.map((s) => (
-                  <li key={s.n}>
-                    <button
-                      disabled={!s.enabled}
-                      onClick={() => setStep(s.n)}
-                      className={`flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm disabled:opacity-40 ${
-                        state.step === s.n
-                          ? "border-indigo-500 bg-indigo-50 text-indigo-800"
-                          : "border-slate-200 bg-white text-slate-600"
-                      }`}
-                    >
-                      <span
-                        className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
-                          state.step === s.n ? "bg-indigo-600 text-white" : "bg-slate-200"
-                        }`}
+              <ol className="mb-8 grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-4">
+                {steps.map((s) => {
+                  const active = state.step === s.n;
+                  const done = s.n < state.step;
+                  return (
+                    <li key={s.n}>
+                      <button
+                        disabled={!s.enabled}
+                        onClick={() => setStep(s.n)}
+                        className="group w-full text-left disabled:cursor-not-allowed"
                       >
-                        {s.n}
-                      </span>
-                      {s.label}
-                    </button>
-                  </li>
-                ))}
+                        <span
+                          className={`block h-1 rounded-full transition ${
+                            active ? "bg-accent" : done ? "bg-accent/40" : "bg-line"
+                          }`}
+                        />
+                        <span className="mt-2.5 flex items-center gap-2">
+                          <span
+                            className={`font-display text-sm tabular-nums ${
+                              active ? "text-accent" : s.enabled ? "text-muted" : "text-muted/50"
+                            }`}
+                          >
+                            0{s.n}
+                          </span>
+                          <span
+                            className={`text-sm font-medium ${
+                              active ? "text-ink" : s.enabled ? "text-muted group-hover:text-ink" : "text-muted/50"
+                            }`}
+                          >
+                            {s.label}
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
               </ol>
               {state.step === 1 && <UploadStep state={state} update={update} log={log} />}
               {state.step === 2 && state.profile && <ProfileStep state={state} update={update} log={log} />}
@@ -237,16 +280,39 @@ export default function App() {
           )}
         </main>
 
-        <footer className="mx-auto max-w-5xl px-4 pb-10 pt-4 text-xs text-slate-500 print:hidden">
-          Job listings provided by{" "}
-          <a className="underline" href="https://remotive.com" target="_blank" rel="noopener noreferrer">
-            Remotive
-          </a>{" "}
-          and{" "}
-          <a className="underline" href="https://www.arbeitnow.com" target="_blank" rel="noopener noreferrer">
-            Arbeitnow
-          </a>
-          . Applications are always submitted by you on the original vacancy page.
+        <footer className="border-t border-line/80 print:hidden">
+          <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-6 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-1">
+              <p>Your CV is processed by OpenAI via this app&apos;s server and is not stored on the server.</p>
+              <p>
+                Job listings provided by{" "}
+                <a
+                  className="underline decoration-line underline-offset-2 hover:text-ink"
+                  href="https://remotive.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Remotive
+                </a>{" "}
+                and{" "}
+                <a
+                  className="underline decoration-line underline-offset-2 hover:text-ink"
+                  href="https://www.arbeitnow.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Arbeitnow
+                </a>
+                . You always submit applications yourself on the original vacancy page.
+              </p>
+            </div>
+            <button
+              onClick={deleteAll}
+              className="self-start rounded-full border border-clay/30 px-3 py-1.5 font-medium text-clay hover:bg-clay-soft sm:self-auto"
+            >
+              Delete all my data
+            </button>
+          </div>
         </footer>
       </div>
       <Toasts toasts={toasts} dismiss={(id) => setToasts((t) => t.filter((x) => x.id !== id))} />
@@ -300,54 +366,94 @@ function UploadStep({ state, update, log }: StepProps) {
   };
 
   return (
-    <section className={card}>
-      <h2 className="text-base font-semibold">Upload your CV</h2>
-      <p className="mt-1 text-sm text-slate-600">
-        PDF or DOCX, up to 4 MB. Everything else (target roles, skills, experience) is derived from it, and you can
-        edit the result.
-      </p>
-      <label
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDrag(true);
-        }}
-        onDragLeave={() => setDrag(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setDrag(false);
-          if (!busy) handle(e.dataTransfer.files[0]);
-        }}
-        className={`mt-4 flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-12 text-center ${
-          drag ? "border-indigo-500 bg-indigo-50" : "border-slate-300 bg-slate-50"
-        }`}
-      >
-        <input
-          type="file"
-          className="hidden"
-          accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-          disabled={busy}
-          onChange={(e) => {
-            handle(e.target.files?.[0]);
-            e.target.value = "";
-          }}
-        />
-        {busy ? (
-          <span className="flex items-center gap-2 text-sm text-slate-700">
-            <Spinner /> Reading your CV and extracting your profile…
-          </span>
-        ) : (
-          <>
-            <span className="text-sm font-medium text-slate-800">Drop your CV here or click to choose a file</span>
-            <span className="mt-1 text-xs text-slate-500">Scanned/image-only PDFs can&apos;t be read.</span>
-          </>
-        )}
-      </label>
-      {state.fileName && (
-        <p className="mt-3 text-xs text-slate-500">
-          Current CV: <strong>{state.fileName}</strong>. Uploading a new file replaces the profile but keeps your
-          tracker.
+    <section className="grid items-start gap-8 lg:grid-cols-[1.05fr_1fr] lg:gap-12">
+      <div className="pt-2">
+        <p className={`${eyebrow} text-accent`}>AI job search, with you in charge</p>
+        <h2 className="mt-3 font-display text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl">
+          Upload your CV.
+          <br />
+          <span className="italic text-accent">Get a shortlist.</span>
+        </h2>
+        <p className="mt-4 max-w-md text-[15px] leading-relaxed text-muted">
+          ApplyWise reads your CV, finds live vacancies, scores each one honestly, and drafts a tailored CV and cover
+          letter that only uses facts from your own experience.
         </p>
-      )}
+        <ul className="mt-6 space-y-3 text-sm">
+          {[
+            ["Extract", "Your CV becomes a profile you can review and edit."],
+            ["Match", "Live jobs are ranked, and mandatory requirements are checked first."],
+            ["Tailor", "Every CV bullet traces back to your original CV."],
+            ["Approve", "Nothing is sent. You approve the package and apply yourself."],
+          ].map(([k, v], i) => (
+            <li key={k} className="flex gap-3">
+              <span className="mt-0.5 font-display text-sm text-accent tabular-nums">0{i + 1}</span>
+              <span>
+                <strong className="font-semibold">{k}.</strong> <span className="text-muted">{v}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className={`${card} p-3 sm:p-3`}>
+        <label
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDrag(true);
+          }}
+          onDragLeave={() => setDrag(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDrag(false);
+            if (!busy) handle(e.dataTransfer.files[0]);
+          }}
+          className={`flex min-h-72 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-10 text-center transition ${
+            drag ? "border-accent bg-accent-soft" : "border-line bg-paper/60 hover:border-accent/50 hover:bg-accent-soft/40"
+          }`}
+        >
+          <input
+            type="file"
+            className="hidden"
+            accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            disabled={busy}
+            onChange={(e) => {
+              handle(e.target.files?.[0]);
+              e.target.value = "";
+            }}
+          />
+          {busy ? (
+            <span className="flex flex-col items-center gap-3 text-sm text-ink">
+              <span className="text-accent">
+                <Spinner />
+              </span>
+              Reading your CV and building your profile…
+              <span className="text-xs text-muted">This usually takes 10–20 seconds.</span>
+            </span>
+          ) : (
+            <>
+              <svg viewBox="0 0 48 56" className="h-14 w-12 text-accent" fill="none" aria-hidden>
+                <path d="M6 2h26l12 12v38a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z" fill="#fffdf8" stroke="currentColor" strokeWidth="2.5" />
+                <path d="M32 2v12h12" stroke="currentColor" strokeWidth="2.5" strokeLinejoin="round" />
+                <path d="M13 26h22M13 33h22M13 40h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" opacity=".45" />
+              </svg>
+              <span className="mt-4 font-display text-lg font-semibold">Drop your CV here</span>
+              <span className="mt-1 text-sm text-muted">or click to choose a file</span>
+              <span className="mt-5 flex gap-2">
+                <Pill tone="muted">PDF</Pill>
+                <Pill tone="muted">DOCX</Pill>
+                <Pill tone="muted">max 4 MB</Pill>
+              </span>
+              <span className="mt-3 text-xs text-muted/80">Scanned or image-only PDFs can&apos;t be read.</span>
+            </>
+          )}
+        </label>
+        {state.fileName && (
+          <p className="px-2 pb-1 pt-3 text-xs text-muted">
+            Current CV: <strong className="text-ink">{state.fileName}</strong>. A new upload replaces the profile and
+            keeps your tracker.
+          </p>
+        )}
+      </div>
     </section>
   );
 }
@@ -401,8 +507,8 @@ function ProfileStep({ state, update, log }: StepProps) {
       <div className={card}>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 className="text-base font-semibold">Review your profile</h2>
-            <p className="mt-1 text-sm text-slate-600">
+            <h2 className="font-display text-2xl font-semibold tracking-tight">Review your profile</h2>
+            <p className="mt-1 text-sm text-muted">
               Extracted from <strong>{state.fileName}</strong>. Fix anything that&apos;s wrong; only this edited copy
               is used. Your original CV text is kept unchanged.
             </p>
@@ -503,11 +609,11 @@ function ProfileStep({ state, update, log }: StepProps) {
       </div>
 
       <div className={card}>
-        <h3 className="font-semibold">Experience</h3>
-        {p.experience.length === 0 && <p className="mt-2 text-sm text-slate-500">No experience found in the CV.</p>}
+        <h3 className="font-display text-lg font-semibold">Experience</h3>
+        {p.experience.length === 0 && <p className="mt-2 text-sm text-muted">No experience found in the CV.</p>}
         <div className="mt-3 space-y-4">
           {p.experience.map((e, i) => (
-            <div key={i} className="rounded-lg border border-slate-200 p-3">
+            <div key={i} className="rounded-xl border border-line bg-paper/40 p-3">
               <div className="grid gap-2 sm:grid-cols-4">
                 <input
                   className={input}
@@ -547,16 +653,16 @@ function ProfileStep({ state, update, log }: StepProps) {
         {(p.education.length > 0 || p.projects.length > 0) && (
           <div className="mt-4 grid gap-4 text-sm sm:grid-cols-2">
             <div>
-              <h4 className="font-medium">Education</h4>
-              <ul className="mt-1 list-disc pl-5 text-slate-700">
+              <h4 className={`${eyebrow} text-muted`}>Education</h4>
+              <ul className="mt-1 list-disc pl-5 text-ink/85">
                 {p.education.map((ed, i) => (
                   <li key={i}>{[ed.degree, ed.institution, ed.year].filter(Boolean).join(", ")}</li>
                 ))}
               </ul>
             </div>
             <div>
-              <h4 className="font-medium">Projects</h4>
-              <ul className="mt-1 list-disc pl-5 text-slate-700">
+              <h4 className={`${eyebrow} text-muted`}>Projects</h4>
+              <ul className="mt-1 list-disc pl-5 text-ink/85">
                 {p.projects.map((pr, i) => (
                   <li key={i}>{pr.name}</li>
                 ))}
@@ -635,7 +741,7 @@ function MatchesStep({ state, update, log }: StepProps) {
   if (state.matches.length === 0) {
     return (
       <section className={card}>
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-muted">
           {state.jobs.length
             ? `${state.jobs.length} jobs were fetched but not scored yet. Go back to the profile step and run the search again.`
             : "No matches yet."}
@@ -650,7 +756,7 @@ function MatchesStep({ state, update, log }: StepProps) {
   return (
     <section className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-muted">
           Top {state.matches.length} of {state.jobs.length} recent jobs, ranked. Jobs failing a mandatory requirement
           are listed last.
         </p>
@@ -659,7 +765,7 @@ function MatchesStep({ state, update, log }: StepProps) {
         </button>
       </div>
       {state.sourceErrors.length > 0 && (
-        <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
+        <p className="rounded-lg border border-[#ead9b0] bg-[#faf1dc] px-3 py-2 text-xs text-[#7a5a17]">
           Some sources failed: {state.sourceErrors.join("; ")}
         </p>
       )}
@@ -674,30 +780,24 @@ function MatchesStep({ state, update, log }: StepProps) {
               <ScoreBadge match={m} />
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="font-semibold">{job.title}</h3>
+                  <h3 className="font-display text-lg font-semibold leading-snug">{job.title}</h3>
                   {!m.eligible && (
-                    <span className="rounded bg-slate-800 px-2 py-0.5 text-xs font-medium text-white">
-                      Not eligible
-                    </span>
+                    <Pill tone="ink">Not eligible</Pill>
                   )}
                   {applied && (
-                    <span className="rounded bg-emerald-600 px-2 py-0.5 text-xs font-medium text-white">
-                      Already applied
-                    </span>
+                    <Pill tone="accent">✓ Already applied</Pill>
                   )}
                   {existing && !applied && (
-                    <span className="rounded bg-indigo-100 px-2 py-0.5 text-xs text-indigo-800">
-                      {STATUS_LABEL[existing.status]}
-                    </span>
+                    <Pill tone="muted">{STATUS_LABEL[existing.status]}</Pill>
                   )}
                 </div>
-                <p className="text-sm text-slate-600">
+                <p className="text-sm text-muted">
                   {job.company} · {job.location}
                   {job.remote ? " · Remote" : ""} · {job.source} · posted {fmtDate(job.postedAt)}
                 </p>
-                <p className="mt-2 text-sm italic text-slate-700">{m.one_line_verdict}</p>
+                <p className="mt-2 font-display text-[15px] italic text-ink/80">{m.one_line_verdict}</p>
                 {m.hard_filter_failures.length > 0 && (
-                  <ul className="mt-2 list-disc pl-5 text-sm text-red-700">
+                  <ul className="mt-3 list-disc space-y-0.5 rounded-lg bg-clay-soft/70 py-2 pl-8 pr-3 text-sm text-clay">
                     {m.hard_filter_failures.map((f, i) => (
                       <li key={i}>{f}</li>
                     ))}
@@ -705,16 +805,16 @@ function MatchesStep({ state, update, log }: StepProps) {
                 )}
                 <div className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
                   <div>
-                    <h4 className="text-xs font-semibold uppercase text-emerald-700">Evidence</h4>
-                    <ul className="mt-1 list-disc pl-5 text-slate-700">
+                    <h4 className={`${eyebrow} text-accent`}>Evidence</h4>
+                    <ul className="mt-1 list-disc pl-5 text-ink/85">
                       {m.matched_evidence.map((x, i) => (
                         <li key={i}>{x}</li>
                       ))}
                     </ul>
                   </div>
                   <div>
-                    <h4 className="text-xs font-semibold uppercase text-rose-700">Gaps</h4>
-                    <ul className="mt-1 list-disc pl-5 text-slate-700">
+                    <h4 className={`${eyebrow} text-clay`}>Gaps</h4>
+                    <ul className="mt-1 list-disc pl-5 text-ink/85">
                       {m.missing_requirements.length ? (
                         m.missing_requirements.map((x, i) => <li key={i}>{x}</li>)
                       ) : (
@@ -723,11 +823,22 @@ function MatchesStep({ state, update, log }: StepProps) {
                     </ul>
                   </div>
                 </div>
-                <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+                <div className="mt-4 grid grid-cols-2 gap-x-5 gap-y-2 sm:grid-cols-3">
                   {(Object.keys(SCORE_MAX) as (keyof typeof SCORE_MAX)[]).map((k) => (
-                    <span key={k}>
-                      {k.replaceAll("_", " ")}: {m.scores[k]}/{SCORE_MAX[k]}
-                    </span>
+                    <div key={k} className="text-[11px] text-muted">
+                      <div className="flex justify-between">
+                        <span className="capitalize">{k.replaceAll("_", " ")}</span>
+                        <span className="tabular-nums">
+                          {m.scores[k]}/{SCORE_MAX[k]}
+                        </span>
+                      </div>
+                      <div className="mt-1 h-1 rounded-full bg-line">
+                        <div
+                          className="h-1 rounded-full bg-accent/70"
+                          style={{ width: `${(m.scores[k] / SCORE_MAX[k]) * 100}%` }}
+                        />
+                      </div>
+                    </div>
                   ))}
                 </div>
                 <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -751,7 +862,7 @@ function MatchesStep({ state, update, log }: StepProps) {
                     View original vacancy
                   </a>
                   {!m.eligible && !applied && (
-                    <label className="flex items-center gap-1 text-xs text-slate-600">
+                    <label className="flex items-center gap-1 text-xs text-muted">
                       <input
                         type="checkbox"
                         checked={!!override[job.id]}
@@ -881,12 +992,12 @@ function PackageStep({ pkg, state, update, log }: StepProps & { pkg: Pkg }) {
       <div className={card}>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
-            <h2 className="text-lg font-semibold">{job.title}</h2>
-            <p className="text-sm text-slate-600">
+            <h2 className="font-display text-2xl font-semibold tracking-tight">{job.title}</h2>
+            <p className="text-sm text-muted">
               {job.company} · {job.location} · {job.source}
             </p>
             <a
-              className="break-all text-sm text-indigo-700 underline"
+              className="break-all text-sm text-accent-ink underline"
               href={job.url}
               target="_blank"
               rel="noopener noreferrer"
@@ -899,7 +1010,7 @@ function PackageStep({ pkg, state, update, log }: StepProps & { pkg: Pkg }) {
         {match && (
           <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
             <div>
-              <h4 className="text-xs font-semibold uppercase text-emerald-700">Strengths</h4>
+              <h4 className={`${eyebrow} text-accent`}>Strengths</h4>
               <ul className="mt-1 list-disc pl-5">
                 {match.matched_evidence.map((x, i) => (
                   <li key={i}>{x}</li>
@@ -907,7 +1018,7 @@ function PackageStep({ pkg, state, update, log }: StepProps & { pkg: Pkg }) {
               </ul>
             </div>
             <div>
-              <h4 className="text-xs font-semibold uppercase text-rose-700">Gaps</h4>
+              <h4 className={`${eyebrow} text-clay`}>Gaps</h4>
               <ul className="mt-1 list-disc pl-5">
                 {[...match.hard_filter_failures, ...match.missing_requirements].map((x, i) => (
                   <li key={i}>{x}</li>
@@ -917,17 +1028,17 @@ function PackageStep({ pkg, state, update, log }: StepProps & { pkg: Pkg }) {
           </div>
         )}
         {pkg.unverified.length > 0 && (
-          <p className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          <p className="mt-3 rounded-lg border border-[#ead9b0] bg-[#faf1dc] px-3 py-2 text-xs text-[#7a5a17]">
             Not claimed (your CV doesn&apos;t prove these): {pkg.unverified.join("; ")}
           </p>
         )}
         {pkg.removedCount > 0 && (
-          <p className="mt-2 text-xs text-slate-500">
+          <p className="mt-2 text-xs text-muted">
             Removed {pkg.removedCount} unsupported item{pkg.removedCount === 1 ? "" : "s"} that could not be traced to
             your CV.
           </p>
         )}
-        <div className="mt-2 text-xs text-slate-500">
+        <div className="mt-2 text-xs text-muted">
           Keywords matched: {pkg.keywordReport.matched.join(", ") || "—"} · missing:{" "}
           {pkg.keywordReport.missing.join(", ") || "—"}
         </div>
@@ -937,14 +1048,14 @@ function PackageStep({ pkg, state, update, log }: StepProps & { pkg: Pkg }) {
       <div className={`${card} sticky top-2 z-10`}>
         <div className="flex flex-wrap items-center gap-2">
           <span
-            className={`rounded px-2 py-1 text-xs font-semibold ${
+            className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${
               applied
-                ? "bg-emerald-600 text-white"
+                ? "bg-accent text-white"
                 : approvedAndCurrent
-                  ? "bg-emerald-100 text-emerald-800"
+                  ? "bg-accent-soft text-accent-ink"
                   : pkg.status === "rejected"
-                    ? "bg-slate-200 text-slate-700"
-                    : "bg-amber-100 text-amber-800"
+                    ? "bg-stone-200 text-stone-700"
+                    : "bg-clay-soft text-clay"
             }`}
           >
             {applied
@@ -967,14 +1078,14 @@ function PackageStep({ pkg, state, update, log }: StepProps & { pkg: Pkg }) {
             </button>
           </div>
         </div>
-        <div className="mt-3 flex flex-wrap gap-2 border-t border-slate-100 pt-3">
+        <div className="mt-3 flex flex-wrap gap-2 border-t border-line/70 pt-3">
           <button className={btnPrimary} onClick={openVacancy} disabled={!approvedAndCurrent || applied}>
             Open vacancy & apply
           </button>
           <button className={btnGhost} onClick={markApplied} disabled={!approvedAndCurrent || applied}>
             {applied ? "Already applied" : "Mark as applied"}
           </button>
-          <span className="mx-1 hidden w-px bg-slate-200 sm:block" />
+          <span className="mx-1 hidden w-px bg-stone-200 sm:block" />
           <button className={btnGhost} onClick={() => download("cv")} disabled={!!downloading}>
             {downloading === "cv" && <Spinner />} CV (.docx)
           </button>
@@ -986,7 +1097,7 @@ function PackageStep({ pkg, state, update, log }: StepProps & { pkg: Pkg }) {
           </a>
         </div>
         {hash && (
-          <p className="mt-2 break-all font-mono text-[10px] text-slate-400">
+          <p className="mt-2 break-all font-mono text-[10px] text-muted/70">
             content sha256: {hash}
             {pkg.approval && hash !== pkg.approval.hash ? " (differs from approved hash)" : ""}
           </p>
@@ -995,7 +1106,7 @@ function PackageStep({ pkg, state, update, log }: StepProps & { pkg: Pkg }) {
 
       {/* CV preview / editor */}
       <div className={card}>
-        <h3 className="font-semibold">Tailored CV {editing && <span className="text-xs text-indigo-600">(editing)</span>}</h3>
+        <h3 className="font-display text-lg font-semibold">Tailored CV {editing && <span className="text-xs text-accent">(editing)</span>}</h3>
         <div className="mt-3 space-y-4">
           <Field label="Summary">
             <textarea className={input} rows={3} readOnly={ro} value={cv.summary} onChange={(e) => setCv({ summary: e.target.value })} />
@@ -1007,7 +1118,7 @@ function PackageStep({ pkg, state, update, log }: StepProps & { pkg: Pkg }) {
             <div key={i}>
               <p className="text-sm font-semibold">
                 {e.title} · {e.company}{" "}
-                <span className="font-normal text-slate-500">{[e.start, e.end].filter(Boolean).join(" – ")}</span>
+                <span className="font-normal text-muted">{[e.start, e.end].filter(Boolean).join(" – ")}</span>
               </p>
               {e.bullets.map((b, j) => (
                 <div key={j} className="mt-1 flex items-start gap-2">
@@ -1026,7 +1137,7 @@ function PackageStep({ pkg, state, update, log }: StepProps & { pkg: Pkg }) {
                       })
                     }
                   />
-                  <span className="mt-2 shrink-0 rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-500" title="Source in your CV">
+                  <span className="mt-2 shrink-0 rounded-full border border-line bg-paper px-2 py-0.5 font-mono text-[10px] text-muted" title="Source in your CV">
                     {b.source_ref}
                   </span>
                 </div>
@@ -1053,7 +1164,7 @@ function PackageStep({ pkg, state, update, log }: StepProps & { pkg: Pkg }) {
                       })
                     }
                   />
-                  <span className="mt-2 shrink-0 rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-500">
+                  <span className="mt-2 shrink-0 rounded-full border border-line bg-paper px-2 py-0.5 font-mono text-[10px] text-muted">
                     {b.source_ref}
                   </span>
                 </div>
@@ -1062,17 +1173,17 @@ function PackageStep({ pkg, state, update, log }: StepProps & { pkg: Pkg }) {
           ))}
           <div className="grid gap-2 text-sm sm:grid-cols-3">
             <div>
-              <h4 className="text-xs font-medium uppercase text-slate-500">Education</h4>
+              <h4 className={`${eyebrow} text-muted`}>Education</h4>
               {cv.education.map((ed, i) => (
                 <p key={i}>{[ed.degree, ed.institution, ed.year].filter(Boolean).join(", ")}</p>
               ))}
             </div>
             <div>
-              <h4 className="text-xs font-medium uppercase text-slate-500">Certifications</h4>
+              <h4 className={`${eyebrow} text-muted`}>Certifications</h4>
               <p>{cv.certifications.join(", ") || "—"}</p>
             </div>
             <div>
-              <h4 className="text-xs font-medium uppercase text-slate-500">Languages</h4>
+              <h4 className={`${eyebrow} text-muted`}>Languages</h4>
               <p>{cv.languages.join(", ") || "—"}</p>
             </div>
           </div>
@@ -1081,8 +1192,8 @@ function PackageStep({ pkg, state, update, log }: StepProps & { pkg: Pkg }) {
 
       <div className={card}>
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold">Cover letter</h3>
-          <span className={`text-xs ${words > 250 ? "text-red-600" : "text-slate-500"}`}>{words} / 250 words</span>
+          <h3 className="font-display text-lg font-semibold">Cover letter</h3>
+          <span className={`text-xs ${words > 250 ? "text-clay" : "text-muted"}`}>{words} / 250 words</span>
         </div>
         <textarea
           className={`${input} mt-3 leading-relaxed`}
@@ -1111,13 +1222,13 @@ function Tracker({
   return (
     <section className="space-y-6">
       <div className={card}>
-        <h2 className="text-base font-semibold">Applications</h2>
+        <h2 className="font-display text-2xl font-semibold tracking-tight">Applications</h2>
         {pkgs.length === 0 ? (
-          <p className="mt-2 text-sm text-slate-500">No application packages yet.</p>
+          <p className="mt-2 text-sm text-muted">No application packages yet.</p>
         ) : (
           <div className="mt-3 overflow-x-auto">
             <table className="w-full min-w-[720px] text-left text-sm">
-              <thead className="text-xs uppercase text-slate-500">
+              <thead className={`${eyebrow} text-muted`}>
                 <tr>
                   <th className="py-2 pr-3">Job</th>
                   <th className="py-2 pr-3">Date</th>
@@ -1129,12 +1240,12 @@ function Tracker({
               </thead>
               <tbody>
                 {pkgs.map((p) => (
-                  <tr key={p.jobId} className="border-t border-slate-100 align-top">
+                  <tr key={p.jobId} className="border-t border-line/70 align-top">
                     <td className="py-2 pr-3">
-                      <button className="text-left font-medium text-indigo-700 hover:underline" onClick={() => openPackage(p.jobId)}>
+                      <button className="text-left font-medium text-accent-ink hover:underline" onClick={() => openPackage(p.jobId)}>
                         {p.job.title}
                       </button>
-                      <div className="text-xs text-slate-500">
+                      <div className="text-xs text-muted">
                         {p.job.company} · {p.job.source}
                       </div>
                     </td>
@@ -1143,11 +1254,11 @@ function Tracker({
                     </td>
                     <td className="py-2 pr-3">{p.match?.total ?? "—"}</td>
                     <td className="py-2 pr-3">
-                      <span className="whitespace-nowrap rounded bg-slate-100 px-2 py-0.5 text-xs">
+                      <span className="whitespace-nowrap rounded-full bg-paper px-2.5 py-0.5 text-xs">
                         {p.needsReapproval ? "Prepared (re-approval required)" : STATUS_LABEL[p.status]}
                       </span>
                     </td>
-                    <td className="py-2 pr-3 font-mono text-xs text-slate-500" title={p.approval?.hash}>
+                    <td className="py-2 pr-3 font-mono text-xs text-muted" title={p.approval?.hash}>
                       {p.approval ? `${p.approval.hash.slice(0, 12)}…` : "—"}
                     </td>
                     <td className="py-2 pr-3">
@@ -1172,16 +1283,16 @@ function Tracker({
       </div>
 
       <div className={card}>
-        <h2 className="text-base font-semibold">Audit log</h2>
+        <h2 className="font-display text-2xl font-semibold tracking-tight">Audit log</h2>
         {state.audit.length === 0 ? (
-          <p className="mt-2 text-sm text-slate-500">No events yet.</p>
+          <p className="mt-2 text-sm text-muted">No events yet.</p>
         ) : (
           <ul className="mt-3 max-h-96 space-y-1 overflow-y-auto text-xs">
             {state.audit.map((a, i) => (
-              <li key={i} className="flex gap-3 border-b border-slate-100 py-1">
-                <span className="shrink-0 text-slate-400">{new Date(a.at).toLocaleString()}</span>
-                <span className="shrink-0 font-mono font-semibold text-slate-700">{a.event}</span>
-                <span className="text-slate-600">{a.detail}</span>
+              <li key={i} className="flex gap-3 border-b border-line/70 py-1">
+                <span className="shrink-0 text-muted/70">{new Date(a.at).toLocaleString()}</span>
+                <span className="shrink-0 font-mono font-semibold text-ink/85">{a.event}</span>
+                <span className="text-muted">{a.detail}</span>
               </li>
             ))}
           </ul>
